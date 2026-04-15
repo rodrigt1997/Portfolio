@@ -26,32 +26,19 @@ const formatDate = (isoDate) =>
         day: "numeric",
     });
 
-/* 🔍 Buscar vídeo dentro del repo */
-const getRepoVideo = async (repoName) => {
-    try {
-        const response = await fetch(
-            `https://api.github.com/repos/${GITHUB_USERNAME}/${repoName}/contents`
-        );
+/* 🎴 Crear tarjeta de proyecto - AHORA ES SÍNCRONA */
+const createProjectCard = (repo) => {
+    // 1. Detectamos si se puso el link de un video en el campo "Website" de GitHub
+    const isVideo = repo.homepage && (
+        repo.homepage.toLowerCase().endsWith(".mp4") ||
+        repo.homepage.toLowerCase().endsWith(".webm") ||
+        repo.homepage.includes("raw.githubusercontent")
+    );
 
-        if (!response.ok) return null;
+    const videoUrl = isVideo ? repo.homepage : null;
 
-        const files = await response.json();
-
-        const videoFile = files.find(file =>
-            file.name.endsWith(".mp4") || file.name.endsWith(".webm")
-        );
-
-        return videoFile ? videoFile.download_url : null;
-    } catch (error) {
-        return null;
-    }
-};
-
-/* 🎴 Crear tarjeta de proyecto */
-const createProjectCard = async (repo) => {
-    const videoUrl = await getRepoVideo(repo.name);
-
-    const demoLink = repo.homepage
+    // 2. Si no es video, es un link de Demo normal
+    const demoLink = (repo.homepage && !isVideo)
         ? `<a href="${repo.homepage}" target="_blank" rel="noreferrer">Demo</a>`
         : "";
 
@@ -67,10 +54,7 @@ const createProjectCard = async (repo) => {
         ? `<li>${repo.language}</li>`
         : "";
 
-
-    const codeLink = videoUrl
-        ? "" // si hay video, ocultamos "Código"
-        : `<a href="${repo.html_url}" target="_blank" rel="noreferrer">Código</a>`;
+    const codeLink = `<a href="${repo.html_url}" target="_blank" rel="noreferrer">Código</a>`;
 
     return `
     <article class="project-card">
@@ -85,20 +69,17 @@ const createProjectCard = async (repo) => {
       <p class="updated">Actualizado: ${formatDate(repo.updated_at)}</p>
       <div class="project-links">
         ${demoLink}
-       ${codeLink}
+        ${codeLink}
         </div>
     </article>
   `;
 };
 
-/* 🧩 Renderizar proyectos */
-const renderProjects = async (repos) => {
+/* 🧩 Renderizar proyectos - YA NO USA PROMISE.ALL */
+const renderProjects = (repos) => {
     if (!projectsGrid) return;
 
-    const cards = await Promise.all(
-        repos.map(repo => createProjectCard(repo))
-    );
-
+    const cards = repos.map(repo => createProjectCard(repo));
     projectsGrid.innerHTML = cards.join("");
 };
 
@@ -126,11 +107,15 @@ const loadGitHubProfile = async () => {
         }
 
         const filteredRepos = repos
-            .filter((repo) => !repo.fork && repo.name !== "Portfolio")
+            .filter((repo) => {
+                const excluded = ["Portfolio"];
+                return !repo.fork && !excluded.includes(repo.name);
+            })
             .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
             .slice(0, MAX_PROJECTS);
 
-        await renderProjects(
+        // AHORA NO NECESITA AWAIT
+        renderProjects(
             filteredRepos.length ? filteredRepos : fallbackProjects
         );
 
@@ -139,7 +124,7 @@ const loadGitHubProfile = async () => {
                 } repositorios recientes de @${GITHUB_USERNAME}.`;
         }
     } catch (error) {
-        await renderProjects(fallbackProjects);
+        renderProjects(fallbackProjects);
 
         if (projectsStatus) {
             projectsStatus.textContent =
