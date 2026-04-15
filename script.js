@@ -126,7 +126,11 @@ const loadGitHubProfile = async () => {
         }
 
         const filteredRepos = repos
-            .filter((repo) => !repo.fork)
+            .filter((repo) => {
+                const isNotFork = !repo.fork;
+                const isNotPortfolio = repo.name.toLowerCase() !== "portfolio";
+                return isNotFork && isNotPortfolio;
+            })
             .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
             .slice(0, MAX_PROJECTS);
 
