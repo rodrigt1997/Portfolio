@@ -16,7 +16,6 @@ const fallbackProjects = [
 
 const projectsGrid = document.querySelector("#projects-grid");
 const projectsStatus = document.querySelector("#projects-status");
-const profileName = document.querySelector("#profile-name");
 const profileBio = document.querySelector("#profile-bio");
 
 const formatDate = (isoDate) =>
@@ -98,9 +97,6 @@ const loadGitHubProfile = async () => {
         const profile = await profileResponse.json();
         const repos = await reposResponse.json();
 
-        if (profileName) {
-            profileName.textContent = profile.name || GITHUB_USERNAME;
-        }
 
         if (profileBio && profile.bio) {
             profileBio.textContent = profile.bio;
