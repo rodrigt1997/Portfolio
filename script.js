@@ -53,7 +53,7 @@ const createProjectCard = (repo) => {
         ? `<li>${repo.language}</li>`
         : "";
 
-    const codeLink = `<a href="${repo.html_url}" target="_blank" rel="noreferrer">Código</a>`;
+    const codeLink = isVideo ? "" : `<a href="${repo.html_url}" target="_blank" rel="noreferrer">Código</a>`;
 
     return `
     <article class="project-card">
